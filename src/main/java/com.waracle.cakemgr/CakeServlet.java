@@ -3,27 +3,36 @@ package com.waracle.cakemgr;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.hibernate.Session;
 import org.hibernate.exception.ConstraintViolationException;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-@WebServlet("/cakes")
+@SuppressWarnings("serial")
+@WebServlet(urlPatterns = {"/cakes"})
 public class CakeServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
 
-    @Override
     public void init() throws ServletException {
         super.init();
 
         System.out.println("init started");
-
+        Set<String> titleSet = new HashSet<>();
 
         System.out.println("downloading cake json");
         try (InputStream inputStream = new URL("https://gist.githubusercontent.com/hart88/198f29ec5114a3ec3460/raw/8dd19a88f9b8d24c23d9960f3300d0c917a4f07c/cake.json").openStream()) {
@@ -46,27 +55,30 @@ public class CakeServlet extends HttpServlet {
             while(nextToken == JsonToken.START_OBJECT) {
                 System.out.println("creating cake entity");
 
-                CakeEntity cakeEntity = new CakeEntity();
                 System.out.println(parser.nextFieldName());
-                cakeEntity.setTitle(parser.nextTextValue());
+                String title = parser.nextTextValue();
+                boolean isAdded = titleSet.add(title);
+                CakeEntity cakeEntity = new CakeEntity();
+                cakeEntity.setTitle(title);
 
                 System.out.println(parser.nextFieldName());
-                cakeEntity.setDescription(parser.nextTextValue());
+                cakeEntity.setDesc(parser.nextTextValue());
 
                 System.out.println(parser.nextFieldName());
                 cakeEntity.setImage(parser.nextTextValue());
 
-                Session session = HibernateUtil.getSessionFactory().openSession();
-                try {
-                    session.beginTransaction();
-                    session.persist(cakeEntity);
-                    System.out.println("adding cake entity");
-                    session.getTransaction().commit();
-                } catch (ConstraintViolationException ex) {
+                if(isAdded) {
+                    Session session = HibernateUtil.getSessionFactory().openSession();
+                    try {
+                        session.beginTransaction();
+                        session.persist(cakeEntity);
+                        System.out.println("adding cake entity");
+                        session.getTransaction().commit();
+                    } catch (ConstraintViolationException ex) {
 
+                    }
+                    session.close();
                 }
-                session.close();
-
                 nextToken = parser.nextToken();
                 System.out.println(nextToken);
 
@@ -81,19 +93,22 @@ public class CakeServlet extends HttpServlet {
         System.out.println("init finished");
     }
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         Session session = HibernateUtil.getSessionFactory().openSession();
-        List<CakeEntity> list = session.createCriteria(CakeEntity.class).list();
+        CriteriaBuilder cb = session.getCriteriaBuilder();
+        CriteriaQuery<CakeEntity> cr = cb.createQuery(CakeEntity.class);
+        Root<CakeEntity> root = cr.from(CakeEntity.class);
+        cr.select(root);
 
+        List<CakeEntity> list = session.createQuery(cr).getResultList();
         resp.getWriter().println("[");
 
         for (CakeEntity entity : list) {
             resp.getWriter().println("\t{");
 
             resp.getWriter().println("\t\t\"title\" : " + entity.getTitle() + ", ");
-            resp.getWriter().println("\t\t\"desc\" : " + entity.getDescription() + ",");
+            resp.getWriter().println("\t\t\"desc\" : " + entity.getDesc() + ",");
             resp.getWriter().println("\t\t\"image\" : " + entity.getImage());
 
             resp.getWriter().println("\t}");

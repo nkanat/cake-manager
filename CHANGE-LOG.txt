@@ -1,0 +1,4 @@
+- Upgraded servlet, hibernate and jetty plugin versions.
+- Cake entity attribute names corrected
+- Modified CakeServlet to use latest classes from jakarta servlet dependency jar.
+- Modified CakeServlet logic to restrict duplicate cake entity entry by use of a set
