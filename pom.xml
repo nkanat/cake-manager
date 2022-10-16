@@ -7,14 +7,19 @@
   <version>1.0-SNAPSHOT</version>
   <name>cake-manager Maven Webapp</name>
   <url>http://maven.apache.org</url>
+    <properties>
+        <servlet.api.version>5.0.0</servlet.api.version>
+        <jetty.version>11.0.12</jetty.version>
+    </properties>
   <dependencies>
 
-      <!-- Servlet -->
       <dependency>
-          <groupId>javax.servlet</groupId>
-          <artifactId>javax.servlet-api</artifactId>
-          <version>3.1.0</version>
+          <groupId>jakarta.servlet</groupId>
+          <artifactId>jakarta.servlet-api</artifactId>
+          <version>${servlet.api.version}</version>
+          <scope>provided</scope>
       </dependency>
+
 
       <!-- JSON -->
       <dependency>
@@ -27,7 +32,7 @@
       <dependency>
           <groupId>org.hibernate</groupId>
           <artifactId>hibernate-entitymanager</artifactId>
-          <version>4.3.6.Final</version>
+          <version>5.6.10.Final</version>
       </dependency>
 
       <!-- In-memory database -->
@@ -52,18 +57,22 @@
 
         <plugin>
             <artifactId>maven-compiler-plugin</artifactId>
-            <version>2.3.2</version>
+            <version>3.8.0</version>
             <configuration>
-                <source>1.8</source>
-                <target>1.8</target>
+                <source>17</source>
+                <target>17</target>
             </configuration>
         </plugin>
-
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-war-plugin</artifactId>
+            <version>3.3.2</version>
+        </plugin>
         <plugin>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-maven-plugin</artifactId>
+            <version>11.0.12</version>
             <configuration>
-                <scanIntervalSeconds>10</scanIntervalSeconds>
                 <stopKey>STOP</stopKey>
                 <stopPort>8005</stopPort>
                 <httpConnector>
